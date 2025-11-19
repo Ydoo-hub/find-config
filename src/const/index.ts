@@ -14,3 +14,5 @@ export const FIREBASE_CONFIG = {
 const app = initializeApp(FIREBASE_CONFIG);
 export const storage = getStorage(app);
 
+
+export const APP_TIME = 1763547010;

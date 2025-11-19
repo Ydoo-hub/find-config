@@ -1,10 +1,11 @@
-// import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { writeTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../const';
 import { toast, loading } from '../../utils/toastManager';
 import findLogo from '../../assets/2.jpg';
+import backIcon from '../../assets/back.png';
 
 import "./style.css";
 
@@ -40,6 +41,7 @@ interface ModuleData {
 }
 
 function FindConfig() {
+  const navigate = useNavigate();
   const iframeWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState(1);
@@ -396,6 +398,9 @@ function FindConfig() {
         <div className="content-wrapper">
           {/* Header */}
           <div className="header-section">
+            <button className="back-button" onClick={() => navigate("/")}>
+              <img src={backIcon} alt="返回" />
+            </button>
             <div className="logo-badge">
               <img src={findLogo} alt="找茬配置" />
             </div>

@@ -76,6 +76,48 @@
   text-align: center;
   margin-bottom: 48px;
   animation: fadeIn 0.4s ease;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  overflow: hidden;
+}
+
+.back-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  border-radius: 8px;
+}
+
+.back-button:hover {
+  transform: translateX(-2px);
+  filter: brightness(1.1);
+}
+
+.back-button:active {
+  transform: translateX(0) scale(0.98);
 }
 
 .logo-badge {
