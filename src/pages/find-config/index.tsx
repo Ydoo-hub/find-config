@@ -1,6 +1,9 @@
 // import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { writeTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../const';
+import { toast, loading } from '../../utils/toastManager';
 
 import "./style.css";
 
@@ -42,8 +45,6 @@ function FindConfig() {
   const [convertedData, setConvertedData] = useState<ModuleData | null>(null);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
   // 当 iframe 加载完成时设置标志
@@ -116,10 +117,6 @@ function FindConfig() {
     };
   }, []);
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
-  };
 
   const convertCSVtoJSON = (csvContent: string): ModuleData => {
     const lines = csvContent.trim().split('\n');
@@ -197,13 +194,13 @@ function FindConfig() {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      showMessage('error', '文件大小超过 10MB 限制');
+      toast.error('文件大小超过 10MB 限制');
       return;
     }
 
     setFileName(file.name);
     setFileSize(`${(file.size / 1024).toFixed(2)} KB`);
-    setIsLoading(true);
+    loading.show('正在解析文件...');
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -222,13 +219,12 @@ function FindConfig() {
         }
         
         setConvertedData(jsonData);
-        
-        showMessage('success', '转换成功！数据已准备就绪');
-        setIsLoading(false);
+        loading.hide();
+        toast.success('转换成功！数据已准备就绪');
       } catch (error: any) {
         console.error('处理文件错误:', error);
-        showMessage('error', '解析失败，请检查配置文件格式是否正确');
-        setIsLoading(false);
+        loading.hide();
+        toast.error('解析失败，请检查配置文件格式是否正确');
         setFileName('');
         setFileSize('');
       }
@@ -258,25 +254,20 @@ function FindConfig() {
     if (file && file.name.endsWith(extension)) {
       handleFile(file, type);
     } else {
-      showMessage('error', `请上传 ${type.toUpperCase()} 格式文件`);
+      toast.error(`请上传 ${type.toUpperCase()} 格式文件`);
     }
+  };
+
+  // 生成文件名的辅助函数
+  const generateFileName = () => {
+    return `module-data.json`;
   };
 
   const downloadJSON = async () => {
     if (!convertedData) return;
 
     const jsonString = JSON.stringify(convertedData, null, 2);
-    
-    // 生成时间戳: YYMMDD_HHmmss
-    const now = new Date();
-    const yy = now.getFullYear().toString().slice(-2);
-    const MM = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const HH = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${yy}${MM}${dd}_${HH}${mm}${ss}`;
-    const fileName = `module-data-${timestamp}.json`;
+    const fileName = generateFileName();
     
     try {
       // 目标路径
@@ -299,7 +290,7 @@ function FindConfig() {
       console.log('正在写入文件...');
       await writeTextFile(filePath, jsonString);
       
-      showMessage('success', `文件已保存到 /Desktop/res-confg/find/${fileName}`);
+      toast.success(`文件已保存到 /Desktop/res-confg/find/${fileName}`);
       console.log('✅ 文件已成功保存');
     } catch (error: any) {
       console.error('❌ 保存文件失败:', error);
@@ -317,7 +308,50 @@ function FindConfig() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      showMessage('error', `无法保存: ${error.message || '权限不足'}`);
+      toast.error(`无法保存: ${error.message || '权限不足'}`);
+    }
+  };
+
+  const uploadToFirebase = async () => {
+    if (!convertedData) return;
+    
+    try {
+      loading.show('正在上传到云端...');
+      
+      // 生成文件名
+      const fileName = generateFileName();
+      
+      // 转换为字符串
+      const jsonString = JSON.stringify(convertedData, null, 2);
+      
+      // 创建 Firebase Storage 引用
+      const storageRef = ref(storage, `find-configs/${fileName}`);
+      
+      // 直接上传字符串（无需创建文件）
+      await uploadString(storageRef, jsonString, 'raw', {
+        contentType: 'application/json'
+      });
+      
+      // 获取下载链接
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      loading.hide();
+      toast.success('已成功上传到云端！');
+      console.log('✅ Firebase URL:', downloadURL);
+      
+      // 可选：复制链接到剪贴板
+      try {
+        await navigator.clipboard.writeText(downloadURL);
+        console.log('✅ 链接已复制到剪贴板');
+      } catch (clipboardError) {
+        console.log('⚠️ 无法复制到剪贴板，但上传成功');
+      }
+      
+      return downloadURL;
+    } catch (error: any) {
+      console.error('❌ 上传失败:', error);
+      loading.hide();
+      toast.error(`上传失败: ${error.message || '未知错误'}`);
     }
   };
 
@@ -325,7 +359,6 @@ function FindConfig() {
     setConvertedData(null);
     setFileName('');
     setFileSize('');
-    setMessage(null);
     
     // 清空 input 的 value，允许重新选择同一个文件
     const csvInput = document.getElementById('csvInput') as HTMLInputElement;
@@ -367,16 +400,8 @@ function FindConfig() {
             <p className="subtitle">上传 CSV 或 JSON 文件进行转换与预览</p>
           </div>
 
-          {/* Message */}
-          {message && (
-            <div className={`message ${message.type}`}>
-              <span className="message-icon">{message.type === 'success' ? '✓' : '✕'}</span>
-              <span>{message.text}</span>
-            </div>
-          )}
-
           {/* Upload Section - 只在没有数据时显示 */}
-          {!convertedData && !isLoading && (
+          {!convertedData && (
             <div className="upload-section">
               <div
                 className="upload-area"
@@ -431,16 +456,8 @@ function FindConfig() {
             </div>
           )}
 
-          {/* Loading */}
-          {isLoading && (
-            <div className="loading-indicator">
-              <div className="spinner"></div>
-              <span>处理中...</span>
-            </div>
-          )}
-
           {/* Preview */}
-          {convertedData && !isLoading && (
+          {convertedData && (
             <div className="preview-section">
               <div className="stats-grid">
                 <div className="stat-card">
@@ -470,7 +487,11 @@ function FindConfig() {
               <div className="button-group">
                 <button className="btn btn-download" onClick={downloadJSON}>
                   <span>💾</span>
-                  <span>保存 JSON</span>
+                  <span>保存到本地</span>
+                </button>
+                <button className="btn btn-upload" onClick={uploadToFirebase}>
+                  <span>☁️</span>
+                  <span>上传到云端</span>
                 </button>
                 <button className="btn btn-reset" onClick={reset}>
                   <span>🔄</span>

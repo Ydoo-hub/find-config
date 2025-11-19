@@ -470,6 +470,21 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
+.btn-upload {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.btn-upload:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.btn-upload:active {
+  transform: translateY(0);
+}
+
 /* ==================== iframe 容器 ==================== */
 .iframe-container {
   width: 100%;
