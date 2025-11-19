@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,shrink-to-fit=no"><title>FIND</title><script defer="defer" src="/bundle.js"></script></head><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lexend:wght@100..900&family=Oleo+Script:wght@400;700&display=swap" rel="stylesheet"><script src="./module-data.js"></script><script>// 判断是否为开发环境
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isDev) {
+    // 开发环境使用 mock 文件
+    document.write('<script src="/js/mock/fbinstant.7.1.mock.js"><\/script>');
+  } else {
+    // 生产环境使用真实 FB SDK
+    document.write('<script src="https://connect.facebook.net/en_US/fbinstant.8.0.js"><\/script>');
+  }</script><body><div id="root"></div><script>console.log('window.moduleData', moduleData);
+    window.moduleData = window.moduleData.module_data;
+    window.global ||= window
+    window._onProgress = true
+    window._isFBInstantInited = false
+
+    window.FBInstantPromise = FBInstant.initializeAsync()
+    window.onFBInstantInited = () => window.FBInstantPromise
+
+    window.onFBGameStarted = () => console.log('1020::: onFBGameStarted 还未赋值')
+
+    // progressPromise
+
+    async function updateProgress() {
+      let progress = 0
+      while (progress < 100) {
+        if (window._onProgress === false) {
+          console.log('updateProgress4', progress)
+          progress = 100
+          FBInstant.setLoadingProgress(progress)
+        } else {
+          console.log('updateProgress5', progress)
+          progress += Math.floor(Math.random() * 3) + 5
+          FBInstant.setLoadingProgress(Math.min(progress, 100))
+          await new Promise((res) => setTimeout(res, 500))
+        }
+      }
+      FBInstant.setLoadingProgress(Math.min(progress, 100))
+      console.log('1020::: onFBGameStarted 11 ')
+      window.FBGameStartedPromise = FBInstant.startGameAsync()
+      window.onFBGameStarted = () => window.FBGameStartedPromise
+      window._isFBInstantInited = true
+    }
+    window.progressPromise = updateProgress</script></body></html>
