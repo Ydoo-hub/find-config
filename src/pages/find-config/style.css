@@ -11,11 +11,25 @@
   top: 0;
   left: 0;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
-/* ==================== 左侧区域 (3/5) ==================== */
+/* 禁止图片拖拽和选择 */
+.find-config-container img {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* ==================== 左侧区域 (7/10) ==================== */
 .find-config-left {
-  width: 60%;
+  width: 70%;
   background: #1A1A1A;
   padding: 0;
   overflow-y: auto;
@@ -46,9 +60,9 @@
   padding: 48px 40px;
 }
 
-/* ==================== 右侧区域 (2/5) ==================== */
+/* ==================== 右侧区域 (3/10) ==================== */
 .find-config-right {
-  width: 40%;
+  width: 30%;
   background: #0E0E0E;
   padding: 0;
   overflow-y: auto;
@@ -386,6 +400,10 @@
   overflow-x: auto;
   max-height: 400px;
   overflow-y: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 .json-preview::-webkit-scrollbar {
