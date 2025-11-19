@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import "./FindConfig.css";
+import "./style.css";
 
 function FindConfig() {
   const iframeWrapperRef = useRef<HTMLDivElement>(null);
@@ -84,8 +84,9 @@ function FindConfig() {
           >
             <iframe
               className="preview-iframe"
-              src="https://example.com"
+              src="/test-game/index.html"
               title="预览窗口"
+              sandbox="allow-scripts allow-same-origin allow-forms"
             />
           </div>
         </div>

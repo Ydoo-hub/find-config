@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 // import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import FindConfig from "./pages/FindConfig";
+import FindConfig from "./pages/find-config";
 import "./App.css";
 
 function App() {
