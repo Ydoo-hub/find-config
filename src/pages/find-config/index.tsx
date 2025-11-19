@@ -4,6 +4,7 @@ import { writeTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../const';
 import { toast, loading } from '../../utils/toastManager';
+import findLogo from '../../assets/2.jpg';
 
 import "./style.css";
 
@@ -395,7 +396,9 @@ function FindConfig() {
         <div className="content-wrapper">
           {/* Header */}
           <div className="header-section">
-            <div className="logo-badge">⚡</div>
+            <div className="logo-badge">
+              <img src={findLogo} alt="找茬配置" />
+            </div>
             <h1>找茬游戏配置工具</h1>
             <p className="subtitle">上传 CSV 或 JSON 文件进行转换与预览</p>
           </div>
@@ -491,11 +494,11 @@ function FindConfig() {
                 </button>
                 <button className="btn btn-upload" onClick={uploadToFirebase}>
                   <span>☁️</span>
-                  <span>上传到云端</span>
+                  <span>上传测试环境</span>
                 </button>
                 <button className="btn btn-reset" onClick={reset}>
                   <span>🔄</span>
-                  <span>重新上传</span>
+                  <span>重新上传文件</span>
                 </button>
               </div>
             </div>

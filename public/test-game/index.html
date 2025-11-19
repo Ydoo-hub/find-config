@@ -52,41 +52,52 @@
       window.moduleData = JSON.parse(customData);
     } else {
       console.log('📦 使用默认 module-data.js 数据');
-      console.log('window.moduleData', moduleData);
-      window.moduleData = window.moduleData.module_data;
-    }
-    window.global ||= window
-    window._onProgress = true
-    window._isFBInstantInited = false
-
-    window.FBInstantPromise = FBInstant.initializeAsync()
-    window.onFBInstantInited = () => window.FBInstantPromise
-
-    window.onFBGameStarted = () => console.log('1020::: onFBGameStarted 还未赋值')
-
-    // progressPromise
-
-    async function updateProgress() {
-      let progress = 0
-      while (progress < 100) {
-        if (window._onProgress === false) {
-          console.log('updateProgress4', progress)
-          progress = 100
-          FBInstant.setLoadingProgress(progress)
-        } else {
-          console.log('updateProgress5', progress)
-          progress += Math.floor(Math.random() * 3) + 5
-          FBInstant.setLoadingProgress(Math.min(progress, 100))
-          await new Promise((res) => setTimeout(res, 500))
-        }
+      console.log('window.moduleData', window.moduleData);
+      if (window.moduleData && window.moduleData.module_data) {
+        window.moduleData = window.moduleData.module_data;
       }
-      FBInstant.setLoadingProgress(Math.min(progress, 100))
-      console.log('1020::: onFBGameStarted 11 ')
-      window.FBGameStartedPromise = FBInstant.startGameAsync()
-      window.onFBGameStarted = () => window.FBGameStartedPromise
-      window._isFBInstantInited = true
     }
-    window.progressPromise = updateProgress
+    
+    // 检查 moduleData 是否存在
+    if (!window.moduleData || (Array.isArray(window.moduleData) && window.moduleData.length === 0)) {
+      document.body.innerHTML = '<div style="color: #000; font-size: 24px; text-align: center; display: flex; justify-content: center; align-items: center; height: 100vh;">请先配置游戏数据</div>';
+      console.error('❌ moduleData 不存在或为空');
+    } else {
+      console.log('✅ moduleData 已加载:', window.moduleData);
+      
+      window.global ||= window
+      window._onProgress = true
+      window._isFBInstantInited = false
+
+      window.FBInstantPromise = FBInstant.initializeAsync()
+      window.onFBInstantInited = () => window.FBInstantPromise
+
+      window.onFBGameStarted = () => console.log('1020::: onFBGameStarted 还未赋值')
+
+      // progressPromise
+
+      async function updateProgress() {
+        let progress = 0
+        while (progress < 100) {
+          if (window._onProgress === false) {
+            console.log('updateProgress4', progress)
+            progress = 100
+            FBInstant.setLoadingProgress(progress)
+          } else {
+            console.log('updateProgress5', progress)
+            progress += Math.floor(Math.random() * 3) + 5
+            FBInstant.setLoadingProgress(Math.min(progress, 100))
+            await new Promise((res) => setTimeout(res, 500))
+          }
+        }
+        FBInstant.setLoadingProgress(Math.min(progress, 100))
+        console.log('1020::: onFBGameStarted 11 ')
+        window.FBGameStartedPromise = FBInstant.startGameAsync()
+        window.onFBGameStarted = () => window.FBGameStartedPromise
+        window._isFBInstantInited = true
+      }
+      window.progressPromise = updateProgress
+    }
   </script>
 </body>
 </html>
