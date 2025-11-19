@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV 转 JSON 转换器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #F7F9FC;
+      min-height: 100vh;
+      line-height: 1.6;
+      color: #2D3748;
+      margin: 0;
+      padding: 0;
+    }
+
+    .layout-wrapper {
+      display: flex;
+      min-height: 100vh;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    .left-panel {
+      flex: 0 0 66.666%;
+      width: 66.666%;
+      overflow-y: auto;
+      height: 100vh;
+      background: #F7F9FC;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+
+    .divider {
+      flex: 0 0 1px;
+      width: 1px;
+      background: linear-gradient(180deg, 
+        transparent 0%, 
+        #CBD5E0 10%, 
+        #CBD5E0 90%, 
+        transparent 100%);
+      position: relative;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      left: -2px;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+
+    .divider:hover::before {
+      background: rgba(78, 205, 196, 0.1);
+    }
+
+    .right-panel {
+      flex: 0 0 33.333%;
+      width: 33.333%;
+      height: 100vh;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow: hidden;
+      gap: 20px;
+    }
+
+    .iframe-container {
+      width: 100%;
+      max-width: 430px;
+      aspect-ratio: 430 / 932;
+      border: 2px solid #E2E8F0;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+      background: white;
+      position: relative;
+    }
+
+    /* 确保容器高度不超过可视区域 */
+    @media (max-height: 1000px) {
+      .iframe-container {
+        max-height: calc(100vh - 40px);
+        width: auto;
+      }
+    }
+
+    .iframe-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .iframe-refresh-btn {
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(78, 205, 196, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .iframe-refresh-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .iframe-refresh-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .iframe-refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(78, 205, 196, 0.4);
+    }
+
+    .iframe-refresh-btn:active {
+      transform: translateY(0);
+    }
+
+    .iframe-refresh-btn .icon {
+      display: inline-block;
+      transition: transform 0.6s ease;
+    }
+
+    .iframe-refresh-btn:hover .icon {
+      transform: rotate(360deg);
+    }
+
+    .iframe-upload-btn {
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .iframe-upload-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .iframe-upload-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .iframe-upload-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 107, 107, 0.4);
+    }
+
+    .iframe-upload-btn:active {
+      transform: translateY(0);
+    }
+
+    .iframe-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+      max-width: 100%;
+      width: 100%;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4ECDC4 0%, #44A08D 100%);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+    }
+
+    h1 {
+      color: #4ECDC4;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    .upload-section {
+      margin-bottom: 32px;
+      display: flex;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .upload-section > .upload-area {
+      flex: 1;
+    }
+
+    .upload-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #A0AEC0;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 0 10px;
+      position: relative;
+      min-width: 60px;
+    }
+
+    .upload-divider::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, #CBD5E0, transparent);
+      transform: translateX(-50%);
+    }
+
+    .upload-area-json {
+      border-color: #A0AEC0;
+      background: linear-gradient(135deg, #F7FAFC 0%, #F0F0F0 100%);
+    }
+
+    .upload-area-json:hover {
+      border-color: #FF6B6B;
+      background: #FFF5F5;
+    }
+
+    .upload-area-json.dragover {
+      border-color: #FF6B6B;
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(238, 90, 111, 0.1) 100%);
+    }
+
+    .upload-area {
+      border: 2px dashed #CBD5E0;
+      border-radius: 20px;
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-area::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(78, 205, 196, 0.1);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .upload-area:hover::before {
+      width: 400px;
+      height: 400px;
+    }
+
+    .upload-area:hover {
+      border-color: #4ECDC4;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(78, 205, 196, 0.15);
+    }
+
+    .upload-area.dragover {
+      border-color: #4ECDC4;
+      background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(68, 160, 141, 0.1) 100%);
+      transform: scale(1.02);
+      box-shadow: 0 12px 32px rgba(78, 205, 196, 0.2);
+    }
+
+    .upload-icon {
+      font-size: 56px;
+      margin-bottom: 20px;
+      display: block;
+      position: relative;
+      z-index: 1;
+      transition: transform 0.3s ease;
+    }
+
+    .upload-area:hover .upload-icon {
+      transform: scale(1.1) translateY(-4px);
+    }
+
+    .upload-text {
+      color: #2D3748;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .upload-hint {
+      color: #A0AEC0;
+      font-size: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .file-info {
+      background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: none;
+      border-left: 4px solid #4ECDC4;
+      animation: slideIn 0.3s ease;
+    }
+
+    .file-info.show {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .file-details {
+      flex: 1;
+    }
+
+    .file-name {
+      color: #2D3748;
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+
+    .file-size {
+      color: #718096;
+      font-size: 13px;
+    }
+
+    .preview-area {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 32px;
+      display: none;
+      border: 1px solid #E2E8F0;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .preview-area.show {
+      display: block;
+    }
+
+    .preview-title {
+      color: #2D3748;
+      font-weight: 700;
+      margin-bottom: 20px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #E2E8F0;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      border-color: #4ECDC4;
+    }
+
+    .stat-label {
+      color: #718096;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      color: #4ECDC4;
+      font-weight: 700;
+      font-size: 28px;
+    }
+
+    .stats-details {
+      background: #F7FAFC;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #E2E8F0;
+      transition: all 0.2s ease;
+    }
+
+    .stat-item:hover {
+      padding-left: 8px;
+      background: rgba(78, 205, 196, 0.05);
+      margin: 0 -8px;
+      padding-right: 8px;
+      border-radius: 8px;
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+
+    .stat-item-label {
+      color: #4A5568;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .stat-item-value {
+      color: #4ECDC4;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .json-preview {
+      background: #1A202C;
+      border-radius: 16px;
+      padding: 24px;
+      color: #E2E8F0;
+      font-family: 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+      overflow-y: auto;
+      white-space: pre;
+      max-height: 600px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .json-preview::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .json-preview::-webkit-scrollbar-track {
+      background: #2D3748;
+      border-radius: 4px;
+    }
+
+    .json-preview::-webkit-scrollbar-thumb {
+      background: #4ECDC4;
+      border-radius: 4px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 16px 40px;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: none;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.2px;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn.show {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+      color: white;
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-download:active {
+      transform: translateY(0);
+    }
+
+    .btn-reset {
+      background: white;
+      color: #4A5568;
+      border: 2px solid #E2E8F0;
+      box-shadow: none;
+    }
+
+    .btn-reset:hover {
+      background: #F7FAFC;
+      border-color: #CBD5E0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .message {
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .message.show {
+      display: flex;
+      animation: slideDown 0.4s ease;
+    }
+
+    .message-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .success-message {
+      background: linear-gradient(135deg, #D4EDDA 0%, #C3E6CB 100%);
+      color: #155724;
+      border: 1px solid #B1DFB7;
+    }
+
+    .error-message {
+      background: linear-gradient(135deg, #FFE5E5 0%, #FFCDD2 100%);
+      color: #C62828;
+      border: 1px solid #FFABAB;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 滚动条样式 */
+    .left-panel::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .left-panel::-webkit-scrollbar-track {
+      background: #F7F9FC;
+    }
+
+    .left-panel::-webkit-scrollbar-thumb {
+      background: #CBD5E0;
+      border-radius: 5px;
+      transition: background 0.3s ease;
+    }
+
+    .left-panel::-webkit-scrollbar-thumb:hover {
+      background: #4ECDC4;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 1600px) {
+      .iframe-container {
+        max-width: 380px;
+      }
+    }
+
+    @media (max-width: 1400px) {
+      .iframe-container {
+        max-width: 340px;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .iframe-container {
+        max-width: 300px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .layout-wrapper {
+        flex-direction: column;
+      }
+
+      .left-panel,
+      .right-panel {
+        flex: 1;
+        width: 100%;
+        height: auto;
+      }
+
+      .left-panel {
+        height: auto;
+        overflow-y: visible;
+      }
+
+      .right-panel {
+        height: auto;
+        min-height: 400px;
+        padding: 40px 20px;
+      }
+
+      .divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, 
+          transparent 0%, 
+          #CBD5E0 10%, 
+          #CBD5E0 90%, 
+          transparent 100%);
+      }
+
+      .divider::before {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 40px 24px;
+      }
+
+      .left-panel {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .upload-section {
+        flex-direction: column;
+      }
+
+      .upload-divider {
+        min-width: auto;
+        padding: 10px 0;
+      }
+
+      .upload-divider::before {
+        width: 100%;
+        height: 1px;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .upload-area {
+        padding: 40px 20px;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout-wrapper">
+    <div class="left-panel">
+      <div class="container">
+    <div class="header">
+      <div class="logo">⚡</div>
+      <h1>找茬游戏配置文件转换工具</h1>
+      <p class="subtitle">可以将csv文件转换为json文件并预览，也可以直接上传json预览</p>
+    </div>
+
+    <div class="message success-message" id="successMessage">
+      <span class="message-icon">✓</span>
+      <span>转换成功！您的数据已准备就绪。</span>
+    </div>
+
+    <div class="message error-message" id="errorMessage">
+      <span class="message-icon">✕</span>
+      <span id="errorText">转换失败，请检查 CSV 文件格式。</span>
+    </div>
+
+    <div class="upload-section">
+      <div class="upload-area" id="uploadArea">
+        <span class="upload-icon">📄</span>
+        <div class="upload-text">点击或拖拽 CSV 文件到这里</div>
+        <div class="upload-hint">支持 .csv 格式 · 最大 10MB</div>
+        <input type="file" id="fileInput" accept=".csv">
+      </div>
+      
+      <div class="upload-divider">或者</div>
+      
+      <div class="upload-area upload-area-json" id="uploadAreaJson">
+        <span class="upload-icon">📋</span>
+        <div class="upload-text">点击或拖拽 JSON 文件到这里</div>
+        <div class="upload-hint">支持 .json 格式 · 最大 10MB</div>
+        <input type="file" id="fileInputJson" accept=".json">
+      </div>
+    </div>
+
+    <div class="file-info" id="fileInfo">
+      <div class="file-icon">📋</div>
+      <div class="file-details">
+        <div class="file-name" id="fileName"></div>
+        <div class="file-size" id="fileSize"></div>
+      </div>
+    </div>
+
+    <div class="preview-area" id="previewArea">
+      <div class="preview-title">
+        <span>📊</span>
+        <span>数据统计</span>
+      </div>
+      
+      <div class="stats-grid" id="statsGrid"></div>
+      
+      <div class="stats-details" id="statsDetails"></div>
+
+      <div class="preview-title">
+        <span>👁️</span>
+        <span>JSON 预览</span>
+      </div>
+      <div class="json-preview" id="jsonPreview"></div>
+    </div>
+
+    <div class="button-group">
+      <button class="btn btn-download" id="downloadBtn">
+        <span>💾</span>
+        <span>下载 JSON 文件</span>
+      </button>
+      <button class="btn btn-reset" id="resetBtn">
+        <span>🔄</span>
+        <span>重新上传</span>
+      </button>
+    </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="right-panel">
+      <div class="iframe-container">
+        <iframe id="previewIframe" src="" title="预览窗口"></iframe>
+      </div>
+      <div class="iframe-buttons">
+        <button class="iframe-refresh-btn" id="iframeRefreshBtn">
+          <span class="icon">🔄</span>
+          <span>强制刷新</span>
+        </button>
+        <button class="iframe-upload-btn" id="iframeUploadBtn">
+          <span>☁️</span>
+          <span>上传配置文件</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let convertedData = null;
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadAreaJson = document.getElementById('uploadAreaJson');
+    const fileInputJson = document.getElementById('fileInputJson');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const previewArea = document.getElementById('previewArea');
+    const statsGrid = document.getElementById('statsGrid');
+    const statsDetails = document.getElementById('statsDetails');
+    const jsonPreview = document.getElementById('jsonPreview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const previewIframe = document.getElementById('previewIframe');
+    const iframeRefreshBtn = document.getElementById('iframeRefreshBtn');
+    const iframeUploadBtn = document.getElementById('iframeUploadBtn');
+
+    // 设置 iframe URL 为当前页面的 base URL + /test-game
+    function setIframeUrl() {
+      const baseUrl = window.location.origin; // 获取 base URL (例如: http://localhost:3200)
+      const gameUrl = baseUrl + '/test-game';
+      // 添加时间戳避免缓存
+      const timestamp = Date.now();
+      previewIframe.src = `${gameUrl}?_t=${timestamp}`;
+      console.log('iframe URL 设置为:', previewIframe.src);
+    }
+
+    // 页面加载时设置 iframe URL
+    setIframeUrl();
+
+    // iframe 强制刷新 - 重新打开 iframe
+    iframeRefreshBtn.addEventListener('click', () => {
+      console.log('🔄 强制刷新 iframe...');
+      setIframeUrl(); // 直接重新设置 URL
+    });
+
+    // 上传配置文件 - 打开 Firebase Storage 控制台并下载 JSON
+    iframeUploadBtn.addEventListener('click', () => {
+      const firebaseUrl = 'https://console.firebase.google.com/u/0/project/recorder-pro-50451/storage/fbg-res-test/files';
+      
+      // 打开 Firebase 控制台
+      window.open(firebaseUrl, '_blank');
+      console.log('📁 打开 Firebase Storage 控制台');
+      
+      // 同时下载 JSON 文件
+      if (convertedData) {
+        const jsonString = JSON.stringify(convertedData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'module-data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('💾 JSON 文件已下载');
+      } else {
+        console.warn('⚠️ 没有可下载的数据，请先上传并转换 CSV 文件');
+      }
+    });
+
+    // 点击上传区域 - CSV
+    uploadArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // 文件选择 - CSV
+    fileInput.addEventListener('change', (e) => {
+      handleFile(e.target.files[0], 'csv');
+    });
+
+    // 拖拽上传 - CSV
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.csv')) {
+        handleFile(file, 'csv');
+      } else {
+        showError('请上传 CSV 格式文件');
+      }
+    });
+
+    // 点击上传区域 - JSON
+    uploadAreaJson.addEventListener('click', () => {
+      fileInputJson.click();
+    });
+
+    // 文件选择 - JSON
+    fileInputJson.addEventListener('change', (e) => {
+      handleFile(e.target.files[0], 'json');
+    });
+
+    // 拖拽上传 - JSON
+    uploadAreaJson.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadAreaJson.classList.add('dragover');
+    });
+
+    uploadAreaJson.addEventListener('dragleave', () => {
+      uploadAreaJson.classList.remove('dragover');
+    });
+
+    uploadAreaJson.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadAreaJson.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.json')) {
+        handleFile(file, 'json');
+      } else {
+        showError('请上传 JSON 格式文件');
+      }
+    });
+
+    // 处理文件
+    function handleFile(file, fileType) {
+      if (!file) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        showError('文件大小超过 10MB 限制');
+        return;
+      }
+
+      // 显示文件信息
+      fileName.textContent = file.name;
+      fileSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
+      fileInfo.classList.add('show');
+
+      // 读取文件
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          let jsonData;
+          
+          if (fileType === 'csv') {
+            // CSV 转 JSON
+            const csvContent = e.target.result;
+            jsonData = convertCSVtoJSON(csvContent);
+          } else if (fileType === 'json') {
+            // JSON 文件直接解析
+            jsonData = JSON.parse(e.target.result);
+            
+            // 验证 JSON 格式
+            if (!jsonData.module_data || !Array.isArray(jsonData.module_data)) {
+              throw new Error('JSON 格式不正确，必须包含 module_data 数组');
+            }
+          }
+          
+          convertedData = jsonData;
+          
+          // 自动保存 module-data.js 到服务器
+          saveModuleDataJS(jsonData).then(saved => {
+            if (saved) {
+              console.log('📁 module-data.js 已成功保存到服务器');
+            } else {
+              console.warn('⚠️ module-data.js 保存失败，但转换成功');
+            }
+          }).catch(err => {
+            console.error('保存过程出错:', err);
+          });
+          
+          // 显示预览
+          displayPreview(jsonData);
+          
+          // 显示按钮
+          downloadBtn.classList.add('show');
+          resetBtn.classList.add('show');
+        } catch (error) {
+          console.error('处理文件错误:', error);
+          showError(`处理失败: ${error.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // 显示成功消息
+    function showSuccess(message) {
+      successMessage.querySelector('span:last-child').textContent = message || '转换成功！您的数据已准备就绪。';
+      successMessage.classList.add('show');
+      errorMessage.classList.remove('show');
+      setTimeout(() => {
+        successMessage.classList.remove('show');
+      }, 3000);
+    }
+
+    // 显示错误消息
+    function showError(message) {
+      errorText.textContent = message;
+      errorMessage.classList.add('show');
+      successMessage.classList.remove('show');
+      setTimeout(() => {
+        errorMessage.classList.remove('show');
+      }, 4000);
+    }
+
+    // CSV 转 JSON
+    function convertCSVtoJSON(csvContent) {
+      const lines = csvContent.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      // 解析 CSV 数据
+      const csvData = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const values = line.split(',');
+        
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index] ? values[index].trim() : '';
+        });
+        csvData.push(row);
+      }
+
+      // 按 area_id 和 level_id 分组
+      const moduleMap = {};
+
+      csvData.forEach(row => {
+        const areaId = row.area_id;
+        const levelId = row.level_id;
+        const differenceName = row.difference;
+        
+        // 初始化 area
+        if (!moduleMap[areaId]) {
+          moduleMap[areaId] = {
+            area_id: areaId,
+            name: row.name,
+            require_coins: parseInt(row.require_coins) || 0,
+            require_cred: parseInt(row.require_cred) || 0,
+            levels: parseInt(row.levels) || 0,
+            levels_config: []
+          };
+        }
+        
+        // 查找或创建 level
+        let level = moduleMap[areaId].levels_config.find(l => l.id === levelId);
+        if (!level) {
+          level = {
+            id: levelId,
+            name: row.level_name || `level ${levelId.split('_')[1]}`,
+            pic: row.pic,
+            num: parseInt(row.num) || 0,
+            coins: parseInt(row.coins) || 0,
+            cred: parseInt(row.cred) || 0,
+            pic1: row.pic1,
+            pic2: row.pic2,
+            check_point: []
+          };
+          moduleMap[areaId].levels_config.push(level);
+        }
+        
+        // 添加检查点
+        const checkPoint = {
+          id: `${levelId}_${differenceName}`,
+          name: differenceName,
+          x: parseInt(row.X) || 0,
+          y: parseInt(row.Y) || 0,
+          w: parseInt(row.W) || 0,
+          h: parseInt(row.H) || 0,
+          circle: parseInt(row['circle（是否为圆形）']) || 0,
+          color: '#FF0000',
+          rotate: parseInt(row['rotate（顺时针旋转x度）']) || 0
+        };
+        
+        level.check_point.push(checkPoint);
+      });
+
+      // 转换为数组
+      const moduleData = Object.values(moduleMap);
+
+      return {
+        module_data: moduleData
+      };
+    }
+
+    // 保存 module-data.js 到服务器
+    async function saveModuleDataJS(jsonData) {
+      try {
+        console.log('🔄 开始保存 module-data.js...');
+        console.log('请求 URL:', window.location.origin + '/api/save-module-data');
+        
+        const response = await fetch('/api/save-module-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonData)
+        });
+
+        console.log('响应状态:', response.status, response.statusText);
+
+        const result = await response.json();
+        console.log('服务器响应:', result);
+        
+        if (result.success) {
+          console.log('✅ module-data.js 已自动保存到根目录');
+          // 显示保存成功的提示
+          showSuccess('转换成功！module-data.js 已保存到服务器。');
+          return true;
+        } else {
+          console.error('❌ 保存失败:', result.message);
+          showError('保存失败: ' + result.message);
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ 保存请求失败:', error);
+        console.error('错误详情:', error.message, error.stack);
+        showError('保存请求失败: ' + error.message);
+        return false;
+      }
+    }
+
+    // 显示预览
+    function displayPreview(jsonData) {
+      // 显示统计卡片
+      const totalAreas = jsonData.module_data.length;
+      let totalLevels = 0;
+      let totalCheckPoints = 0;
+
+      jsonData.module_data.forEach(area => {
+        totalLevels += area.levels_config.length;
+        area.levels_config.forEach(level => {
+          totalCheckPoints += level.check_point.length;
+        });
+      });
+
+      statsGrid.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-label">区域总数</div>
+          <div class="stat-value">${totalAreas}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">关卡总数</div>
+          <div class="stat-value">${totalLevels}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">检查点总数</div>
+          <div class="stat-value">${totalCheckPoints}</div>
+        </div>
+      `;
+
+      // 显示详细统计
+      const detailsHTML = jsonData.module_data.map(area => {
+        return `
+          <div class="stat-item">
+            <span class="stat-item-label">${area.area_id} - ${area.name}</span>
+            <span class="stat-item-value">${area.levels_config.length} 个关卡</span>
+          </div>
+        `;
+      }).join('');
+
+      statsDetails.innerHTML = detailsHTML;
+
+      // 显示完整的 JSON 预览
+      const jsonString = JSON.stringify(jsonData, null, 2);
+      jsonPreview.textContent = jsonString;
+
+      previewArea.classList.add('show');
+    }
+
+    // 下载 JSON
+    downloadBtn.addEventListener('click', () => {
+      if (!convertedData) return;
+
+      const jsonString = JSON.stringify(convertedData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'module-data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // 重置
+    resetBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      fileInputJson.value = '';
+      fileInfo.classList.remove('show');
+      previewArea.classList.remove('show');
+      downloadBtn.classList.remove('show');
+      resetBtn.classList.remove('show');
+      successMessage.classList.remove('show');
+      errorMessage.classList.remove('show');
+      convertedData = null;
+    });
+  </script>
+</body>
+</html>
