@@ -26,6 +26,11 @@
 <body>
   <div id="root"></div>
   <script>
+    // 禁用右键菜单
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    });
     window.console.log = (a) => {}
     
     // 🔥 首先设置消息监听器（在最前面）
