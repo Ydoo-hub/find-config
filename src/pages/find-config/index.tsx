@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { writeTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../const';
 import { toast, loading } from '../../utils/toastManager';
@@ -270,9 +271,10 @@ function FindConfig() {
     if (!convertedData) return;
 
     const jsonString = JSON.stringify(convertedData, null, 2);
-    const fileName = generateFileName();
+    // 年月日时分 + module-data.json 例如：20251121-HH:mm:ss-module-data.json
+    const fileName = `${new Date().getFullYear()}${new Date().getMonth() + 1}${new Date().getDate()}-${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()}-module-data.json`;
     
-    try {
+    try { 
       // 目标路径
       const targetFolderPath = '/Users/ydoo/Desktop/res-confg/find';
       const filePath = `${targetFolderPath}/${fileName}`;
@@ -392,6 +394,16 @@ function FindConfig() {
 
   const stats = getTotalStats();
 
+  // 打开配置规范网页
+  const openSpecification = async (url: string) => {
+    try {
+      await openUrl(url);
+    } catch (error) {
+      console.error('打开网页失败:', error);
+      toast.error('无法打开网页，请检查网络连接');
+    }
+  };
+
   return (
     <div className="find-config-container">
       <div className="find-config-left">
@@ -411,44 +423,68 @@ function FindConfig() {
           {/* Upload Section - 只在没有数据时显示 */}
           {!convertedData && (
             <div className="upload-section">
-              <div
-                className="upload-area"
-                onClick={() => document.getElementById('csvInput')?.click()}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, 'csv')}
-              >
-                <span className="upload-icon">📄</span>
-                <div className="upload-text">点击或拖拽 CSV 文件</div>
-                <div className="upload-hint">支持 .csv 格式 · 最大 10MB</div>
-                <input
-                  id="csvInput"
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => handleFileSelect(e, 'csv')}
-                  style={{ display: 'none' }}
-                />
+              <div className="upload-item">
+                <div
+                  className="upload-area"
+                  onClick={() => document.getElementById('csvInput')?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, 'csv')}
+                >
+                  <span className="upload-icon">📄</span>
+                  <div className="upload-text">点击或拖拽 CSV 文件</div>
+                  <div className="upload-hint">支持 .csv 格式 · 最大 10MB</div>
+                  <input
+                    id="csvInput"
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => handleFileSelect(e, 'csv')}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+                <button 
+                  className="spec-button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openSpecification('https://cwtus1pn64.feishu.cn/wiki/XSODwAZGFiOFANkDpdzcI4Fbnfb?sheet=fVzI08');
+                  }}
+                >
+                  📖 查看配置规范
+                </button>
               </div>
 
               <div className="upload-divider">或</div>
 
-              <div
-                className="upload-area upload-area-json"
-                onClick={() => document.getElementById('jsonInput')?.click()}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, 'json')}
-              >
-                <span className="upload-icon">📋</span>
-                <div className="upload-text">点击或拖拽 JSON 文件</div>
-                <div className="upload-hint">支持 .json 格式 · 最大 10MB</div>
-                <input
-                  id="jsonInput"
-                  type="file"
-                  accept=".json"
-                  onChange={(e) => handleFileSelect(e, 'json')}
-                  style={{ display: 'none' }}
-                />
+              <div className="upload-item">
+                <div
+                  className="upload-area upload-area-json"
+                  onClick={() => document.getElementById('jsonInput')?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, 'json')}
+                >
+                  <span className="upload-icon">📋</span>
+                  <div className="upload-text">点击或拖拽 JSON 文件</div>
+                  <div className="upload-hint">支持 .json 格式 · 最大 10MB</div>
+                  <input
+                    id="jsonInput"
+                    type="file"
+                    accept=".json"
+                    onChange={(e) => handleFileSelect(e, 'json')}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+                <button 
+                  className="spec-button spec-button-json"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openSpecification('https://firebasestorage.googleapis.com/v0/b/fbg-res-test/o/find-configs%2Fmodule-data.json?alt=media');
+                  }}
+                >
+                  📖 查看配置规范
+                </button>
               </div>
             </div>
           )}
