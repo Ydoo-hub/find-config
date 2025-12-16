@@ -3,7 +3,7 @@ import Home from "./pages/home-page";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FindConfig from "./pages/find-config";
-import QuizConfig from "./pages/QuizConfig";
+import QuizConfig from "./pages/quiz-config";
 import Login from "./pages/login-page";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GlobalOverlay from "./components/GlobalOverlay";

@@ -1,0 +1,17 @@
+{
+  "name": "translation-service",
+  "version": "1.0.0",
+  "description": "多语言翻译文件生成服务",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "fs-extra": "^11.1.1"
+  },
+  "keywords": ["translation", "multilingual", "csv"],
+  "author": "",
+  "license": "MIT"
+}

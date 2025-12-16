@@ -86,12 +86,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
@@ -120,6 +120,48 @@
   transform: translateX(0) scale(0.98);
 }
 
+.setting-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  overflow: hidden;
+}
+
+.setting-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  border-radius: 10px;
+}
+
+.setting-button:hover {
+  transform: translateX(2px);
+  filter: brightness(1.1);
+}
+
+.setting-button:active {
+  transform: translateX(0) scale(0.98);
+}
+
+
 .logo-badge {
   width: 64px;
   height: 64px;
@@ -145,6 +187,7 @@
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 12px 0;
+  line-height: 1.2;
   letter-spacing: -0.5px;
 }
 
@@ -522,18 +565,19 @@
 /* ==================== 按钮组 ==================== */
 .button-group {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 32px;
+  gap: 6px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -598,6 +642,21 @@
   transform: translateY(0);
 }
 
+.btn-upload-prod {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(245, 87, 108, 0.3);
+}
+
+.btn-upload-prod:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 87, 108, 0.4);
+}
+
+.btn-upload-prod:active {
+  transform: translateY(0);
+}
+
 /* ==================== iframe 容器 ==================== */
 .iframe-container {
   width: 100%;
@@ -656,6 +715,202 @@
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/* ==================== 设置弹窗 ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: #1A1A1A;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: scaleIn 0.2s ease;
+  border: 1px solid #2A2A2A;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1px solid #2A2A2A;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background: #2A2A2A;
+  color: #FFF;
+}
+
+.modal-body {
+  padding: 28px;
+}
+
+.setting-item {
+  margin-bottom: 24px;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #E4E4E4;
+  margin-bottom: 10px;
+}
+
+.setting-input-group {
+  display: flex;
+  gap: 12px;
+}
+
+.setting-input {
+  flex: 1;
+  background: #0E0E0E;
+  border: 1px solid #2A2A2A;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #E4E4E4;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.setting-input:focus {
+  border-color: #4A9EFF;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+}
+
+.setting-select-btn {
+  background: #2A2A2A;
+  border: 1px solid #3A3A3A;
+  border-radius: 10px;
+  padding: 12px 20px;
+  color: #E4E4E4;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.setting-select-btn:hover {
+  background: #3A3A3A;
+  border-color: #4A9EFF;
+  color: #4A9EFF;
+}
+
+.setting-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
+.setting-hint code {
+  background: #0E0E0E;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #4A9EFF;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 1px solid #2A2A2A;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.modal-btn-cancel {
+  background: transparent;
+  color: #888;
+  border: 1px solid #2A2A2A;
+}
+
+.modal-btn-cancel:hover {
+  background: #2A2A2A;
+  color: #E4E4E4;
+}
+
+.modal-btn-save {
+  background: linear-gradient(135deg, #4A9EFF 0%, #357ABD 100%);
+  color: #FFFFFF;
+  border: none;
+}
+
+.modal-btn-save:hover {
+  background: linear-gradient(135deg, #5AAEFF 0%, #4A9EFF 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+}
+
+.modal-btn-save:active {
+  transform: translateY(0);
 }
 
 /* ==================== 响应式 ==================== */

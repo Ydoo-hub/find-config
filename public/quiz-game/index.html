@@ -1,0 +1,89 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,shrink-to-fit=no"><title>QUIZ</title><script defer="defer" src="/quiz-game/bundle.js"></script></head><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet"/><script src="./fbloader.js"></script><script>
+  // 设置 postMessage 监听器，用于接收配置数据
+  console.log('🎯 开始设置 postMessage 监听器 (Quiz Game)');
+  window.addEventListener('message', function(event) {
+    console.log('📬 Quiz Game 收到消息:', event.data);
+    if (event.data.type === 'UPDATE_MODULE_DATA') {
+      console.log('📨 收到新的 module data');
+      
+      // 保存到 sessionStorage
+      sessionStorage.setItem('customModuleData', JSON.stringify(event.data.data.module_data));
+      console.log('💾 数据已保存到 sessionStorage');
+      
+      // 通知父窗口数据已保存，让父窗口重新加载 iframe
+      window.parent.postMessage({ type: 'DATA_SAVED' }, '*');
+    }
+  });
+  console.log('✅ postMessage 监听器设置完成 (Quiz Game)');
+  </script><script src="/quiz-game/moduleData.js"></script><script>
+  // 优先使用 sessionStorage 中的数据
+  const customData = sessionStorage.getItem('customModuleData');
+  if (customData) {
+    console.log('🎯 Quiz Game 使用自定义上传的数据');
+    window.moduleData = JSON.parse(customData);
+  } else {
+    console.log('📦 Quiz Game 使用默认 moduleData.js 数据');
+    console.log('window.moduleData', window.moduleData);
+    if (window.moduleData && window.moduleData.module_data) {
+      window.moduleData = window.moduleData.module_data;
+    }
+  }
+
+  localStorage.setItem('istestenv', JSON.stringify(true));
+  
+  // 等待 DOM 加载完成后检查数据
+  window.addEventListener('DOMContentLoaded', function() {
+    console.log('window.moduleData', window.moduleData);
+    
+    // 检查 moduleData 是否存在且有效
+    const isDataEmpty = !window.moduleData || 
+                        (Array.isArray(window.moduleData) && window.moduleData.length === 0) ||
+                        (window.moduleData.module_data && Array.isArray(window.moduleData.module_data) && window.moduleData.module_data.length === 0);
+    
+    if (isDataEmpty) {
+      document.body.innerHTML = '<div style="color: #000; font-size: 24px; text-align: center; display: flex; justify-content: center; align-items: center; height: 100vh;">请先配置游戏数据</div>';
+      console.error('❌ Quiz Game moduleData 不存在或为空');
+    } else {
+      console.log('✅ Quiz Game moduleData 已加载:', window.moduleData);
+    }
+  });
+  </script><script>// 判断是否为开发环境
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isDev) {
+      // 开发环境使用 mock 文件
+      document.write('<script src="/quiz-game/js/mock/fbinstant.7.1.mock.js"><\/script>');
+    } else {
+      // 生产环境使用真实 FB SDK
+      document.write('<script src="https://connect.facebook.net/en_US/fbinstant.7.1.js"><\/script>');
+    }</script><body><div id="root"></div><script>window.global ||= window
+  
+      window._onProgress = true
+      async function updateProgress() {
+        console.log(FBInstant, 'FBInstant.....')
+        let progress = 1
+        while (progress < 100) {
+          if (window._onProgress === false) {
+            progress = 100
+            FBInstant.setLoadingProgress(progress)
+          } else {
+            progress += Math.ceil(10 * Math.random())
+            FBInstant.setLoadingProgress(Math.min(progress, 100))
+            await new Promise((res) => setTimeout(res, 200))
+          }
+        }
+      }
+      // console.log(FBInstant, 'FBInstant.....22222')
+      updateProgress()
+      window.FBInstantPromise = FBInstant.initializeAsync()
+      window.gameStartPromise = window.FBInstantPromise.then(() => {
+        return FBInstant.startGameAsync()
+      })
+      // console.log(FBInstant, 'FBInstant.....33333')
+      window.onFBInstantInited = () => window.FBInstantPromise
+      window.onFBGameStarted = () => window.gameStartPromise
+  
+  
+      // const script = document.createElement('script');
+      // script.src = 'https://cdnjs.cloudflare.com/ajax/libs/eruda/3.4.1/eruda.min.js';
+      // script.onload = () => eruda.init();
+      // document.body.appendChild(script);</script></body></html>

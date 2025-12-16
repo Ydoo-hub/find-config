@@ -14,7 +14,7 @@
       {
         "title": "Game Config",
         "width": 1202,
-        "height": 750
+        "height": 780
       }
     ],
     "security": {
@@ -28,8 +28,8 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/icon2.icns",
-      "icons/logo2.ico"
+      "icons/icon.icns",
+      "icons/logo.ico"
     ]
   }
 }

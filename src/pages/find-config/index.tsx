@@ -7,6 +7,7 @@ import { storage } from '../../const';
 import { toast, loading } from '../../utils/toastManager';
 import findLogo from '../../assets/2.jpg';
 import backIcon from '../../assets/back.png';
+import settingIcon from '../../assets/setting.png';
 
 import "./style.css";
 
@@ -50,6 +51,10 @@ function FindConfig() {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState("");
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [savePath, setSavePath] = useState<string>(() => {
+    return localStorage.getItem('find-config-save-path') || '';
+  });
 
   // 当 iframe 加载完成时设置标志
   const handleIframeLoad = () => {
@@ -267,17 +272,61 @@ function FindConfig() {
     return `module-data.json`;
   };
 
+  // 验证并保存路径
+  const validateAndSavePath = async (path: string) => {
+    if (!path.trim()) {
+      toast.error('请输入保存路径');
+      return false;
+    }
+    
+    try {
+      // 检查路径是否存在
+      const pathExists = await exists(path);
+      if (!pathExists) {
+        // 尝试创建路径
+        await mkdir(path, { recursive: true });
+      }
+      return true;
+    } catch (error: any) {
+      console.error('验证路径失败:', error);
+      toast.error('路径无效或无法访问');
+      return false;
+    }
+  };
+
+  // 保存设置
+  const saveSettings = async () => {
+    if (!savePath.trim()) {
+      toast.error('请输入保存路径');
+      return;
+    }
+    
+    const isValid = await validateAndSavePath(savePath);
+    if (isValid) {
+      localStorage.setItem('find-config-save-path', savePath);
+      setShowSettingsModal(false);
+      toast.success('设置已保存');
+    }
+  };
+
   const downloadJSON = async () => {
     if (!convertedData) return;
 
+    // 检查是否有保存路径
+    if (!savePath) {
+      toast.error('请先设置保存路径');
+      setShowSettingsModal(true);
+      return;
+    }
+
     const jsonString = JSON.stringify(convertedData, null, 2);
-    // 年月日时分 + module-data.json 例如：20251121-HH:mm:ss-module-data.json
-    const fileName = `${new Date().getFullYear()}${new Date().getMonth() + 1}${new Date().getDate()}-${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()}-module-data.json`;
-    
+    // 年月日时分秒 + module-data.json 例如：20251121-143045-module-data.json
+    const fileName = `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getHours()).padStart(2, '0')}${String(new Date().getMinutes()).padStart(2, '0')}${String(new Date().getSeconds()).padStart(2, '0')}-module-data.json`;
     try { 
-      // 目标路径
-      const targetFolderPath = '/Users/ydoo/Desktop/res-confg/find';
-      const filePath = `${targetFolderPath}/${fileName}`;
+      // 使用设置的保存路径
+      const targetFolderPath = savePath;
+      const filePath = `${targetFolderPath}/find/${fileName}`;
+    console.log('fileName', filePath);
       
       console.log('目标文件夹:', targetFolderPath);
       console.log('目标文件:', filePath);
@@ -295,7 +344,7 @@ function FindConfig() {
       console.log('正在写入文件...');
       await writeTextFile(filePath, jsonString);
       
-      toast.success(`文件已保存到 /Desktop/res-confg/find/${fileName}`);
+      toast.success(`文件已保存到 ${fileName}`);
       console.log('✅ 文件已成功保存');
     } catch (error: any) {
       console.error('❌ 保存文件失败:', error);
@@ -321,7 +370,7 @@ function FindConfig() {
     if (!convertedData) return;
     
     try {
-      loading.show('正在上传到云端...');
+      loading.show('正在上传到测试环境...');
       
       // 生成文件名
       const fileName = generateFileName();
@@ -329,7 +378,7 @@ function FindConfig() {
       // 转换为字符串
       const jsonString = JSON.stringify(convertedData, null, 2);
       
-      // 创建 Firebase Storage 引用
+      // 创建 Firebase Storage 引用（测试环境）
       const storageRef = ref(storage, `find-configs/${fileName}`);
       
       // 直接上传字符串（无需创建文件）
@@ -341,7 +390,7 @@ function FindConfig() {
       const downloadURL = await getDownloadURL(storageRef);
       
       loading.hide();
-      toast.success('已成功上传到云端！');
+      toast.success('已成功上传到测试环境！');
       console.log('✅ Firebase URL:', downloadURL);
       
       // 可选：复制链接到剪贴板
@@ -358,6 +407,50 @@ function FindConfig() {
       loading.hide();
       toast.error(`上传失败: ${error.message || '未知错误'}`);
     }
+  };
+
+  const uploadToFirebaseProduction = async () => {
+    // 打开url https://console.firebase.google.com/u/0/project/recorder-pro-50451/storage/fbg-res/files
+    await openUrl('https://console.firebase.google.com/u/0/project/recorder-pro-50451/storage/fbg-res/files/~2Ffind-configs');
+    // if (!convertedData) return;
+    // try {
+    //   loading.show('正在上传到正式环境...');
+      
+    //   // 生成文件名
+    //   const fileName = generateFileName();
+      
+    //   // 转换为字符串
+    //   const jsonString = JSON.stringify(convertedData, null, 2);
+      
+    //   // 创建 Firebase Storage 引用（正式环境）
+    //   const storageRef = ref(storage, `find-configs-prod/${fileName}`);
+      
+    //   // 直接上传字符串（无需创建文件）
+    //   await uploadString(storageRef, jsonString, 'raw', {
+    //     contentType: 'application/json'
+    //   });
+      
+    //   // 获取下载链接
+    //   const downloadURL = await getDownloadURL(storageRef);
+      
+    //   loading.hide();
+    //   toast.success('已成功上传到正式环境！');
+    //   console.log('✅ Firebase Production URL:', downloadURL);
+      
+    //   // 可选：复制链接到剪贴板
+    //   try {
+    //     await navigator.clipboard.writeText(downloadURL);
+    //     console.log('✅ 链接已复制到剪贴板');
+    //   } catch (clipboardError) {
+    //     console.log('⚠️ 无法复制到剪贴板，但上传成功');
+    //   }
+      
+    //   return downloadURL;
+    // } catch (error: any) {
+    //   console.error('❌ 上传失败:', error);
+    //   loading.hide();
+    //   toast.error(`上传失败: ${error.message || '未知错误'}`);
+    // }
   };
 
   const reset = () => {
@@ -411,7 +504,10 @@ function FindConfig() {
           {/* Header */}
           <div className="header-section">
             <button className="back-button" onClick={() => navigate("/")}>
-              <img src={backIcon} alt="返回" />
+              <img src={settingIcon} alt="返回" />
+            </button>
+            <button className="setting-button" onClick={() => setShowSettingsModal(true)}>  
+              <img src={backIcon} alt="设置" />
             </button>
             <div className="logo-badge">
               <img src={findLogo} alt="找茬配置" />
@@ -537,6 +633,10 @@ function FindConfig() {
                   <span>☁️</span>
                   <span>上传测试环境</span>
                 </button>
+                <button className="btn btn-upload-prod" onClick={uploadToFirebaseProduction}>
+                  <span>🚀</span>
+                  <span>上传正式环境</span>
+                </button>
                 <button className="btn btn-reset" onClick={reset}>
                   <span>🔄</span>
                   <span>重新上传文件</span>
@@ -567,6 +667,55 @@ function FindConfig() {
           </div>
         </div>
       </div>
+
+      {/* 设置弹窗 */}
+      {showSettingsModal && (
+        <div className="modal-overlay" onClick={() => setShowSettingsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>⚙️ 设置</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowSettingsModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="setting-item">
+                <label className="setting-label">文件保存路径</label>
+                <div className="setting-input-group">
+                  <input
+                    type="text"
+                    className="setting-input"
+                    value={savePath}
+                    onChange={(e) => setSavePath(e.target.value)}
+                    placeholder="例如：/Users/你的用户名/Desktop/game-configs"
+                  />
+                </div>
+                <p className="setting-hint">
+                  请输入完整的文件夹路径。例如 macOS: <code>/Users/username/Desktop/configs</code><br/>
+                  如果文件夹不存在，系统会自动创建
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="modal-btn modal-btn-cancel"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="modal-btn modal-btn-save"
+                onClick={saveSettings}
+              >
+                保存设置
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
