@@ -403,32 +403,44 @@ if (typeof module !== 'undefined' && module.exports) {
       // 转换为 JSON 字符串
       const jsonString = JSON.stringify(file1Data, null, 2);
       
-      // 创建 Firebase Storage 引用（正式环境）
-      // 路径: quiz-configs/moduleData.json
-      const storageRef = ref(storageProd, `quiz-configs/moduleData.json`);
+      // 生成时间戳文件名：年月日时分秒-moduleData.json
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      const backupFileName = `${timestamp}-moduleData.json`;
       
-      // 直接上传字符串
-      await uploadString(storageRef, jsonString, 'raw', {
+      // 1. 上传当前使用的文件：moduleData.json
+      loading.show('正在上传当前配置文件...');
+      const currentStorageRef = ref(storageProd, `quiz-configs/moduleData.json`);
+      await uploadString(currentStorageRef, jsonString, 'raw', {
         contentType: 'application/json'
       });
+      const currentURL = await getDownloadURL(currentStorageRef);
+      console.log('✅ 当前配置文件已上传:', currentURL);
       
-      // 获取下载链接
-      const downloadURL = await getDownloadURL(storageRef);
+      // 2. 上传备份文件：年月日时分秒-moduleData.json
+      loading.show('正在保存备份文件...');
+      const backupStorageRef = ref(storageProd, `quiz-configs/backups/${backupFileName}`);
+      await uploadString(backupStorageRef, jsonString, 'raw', {
+        contentType: 'application/json'
+      });
+      const backupURL = await getDownloadURL(backupStorageRef);
+      console.log('✅ 备份文件已保存:', backupURL);
       
       loading.hide();
-      toast.success('✅ 素材配置已成功上传到正式环境！');
-      console.log('✅ Firebase Production URL:', downloadURL);
+      toast.success(`✅ 素材配置已成功上传到正式环境！\n📦 备份文件: ${backupFileName}`);
+      console.log('✅ Firebase Production URL:', currentURL);
+      console.log('📦 Backup URL:', backupURL);
       
-      // 复制链接到剪贴板
+      // 复制当前文件链接到剪贴板
       try {
-        await navigator.clipboard.writeText(downloadURL);
-        toast.success('🔗 下载链接已复制到剪贴板');
+        await navigator.clipboard.writeText(currentURL);
+        toast.success('🔗 当前文件链接已复制到剪贴板');
         console.log('✅ 链接已复制到剪贴板');
       } catch (clipboardError) {
         console.log('⚠️ 无法复制到剪贴板，但上传成功');
       }
       
-      return downloadURL;
+      return { currentURL, backupURL, backupFileName };
     } catch (error: any) {
       console.error('❌ 上传到正式环境失败:', error);
       loading.hide();
@@ -532,8 +544,12 @@ if (typeof module !== 'undefined' && module.exports) {
     try {
       loading.show('正在上传翻译文件到正式环境...');
       
-      const uploadResults: { language: string; url: string }[] = [];
+      const uploadResults: { language: string; url: string; backupUrl?: string }[] = [];
       const failedUploads: string[] = [];
+      
+      // 生成时间戳文件名
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
       
       // 遍历所有语言，逐个上传
       const languages = Object.keys(file2Data!);
@@ -548,20 +564,27 @@ if (typeof module !== 'undefined' && module.exports) {
           // 创建 locale.json 内容
           const jsonString = JSON.stringify(translationData, null, 2);
           
-          // 创建 Firebase Storage 引用（正式环境）
-          // 路径: quiz-configs/translations/[lang]/locale.json
-          const storageRef = ref(storageProd, `quiz-configs/translations/${lang}/locale.json`);
-          
-          // 上传字符串
-          await uploadString(storageRef, jsonString, 'raw', {
+          // 1. 上传当前使用的文件
+          const currentStorageRef = ref(storageProd, `quiz-configs/translations/${lang}/locale.json`);
+          await uploadString(currentStorageRef, jsonString, 'raw', {
             contentType: 'application/json'
           });
+          const currentURL = await getDownloadURL(currentStorageRef);
           
-          // 获取下载链接
-          const downloadURL = await getDownloadURL(storageRef);
+          // 2. 上传备份文件
+          const backupStorageRef = ref(storageProd, `quiz-configs/translations/backups/${timestamp}/${lang}/locale.json`);
+          await uploadString(backupStorageRef, jsonString, 'raw', {
+            contentType: 'application/json'
+          });
+          const backupURL = await getDownloadURL(backupStorageRef);
           
-          uploadResults.push({ language: lang, url: downloadURL });
-          console.log(`✅ ${lang} 上传到正式环境成功:`, downloadURL);
+          uploadResults.push({ 
+            language: lang, 
+            url: currentURL,
+            backupUrl: backupURL 
+          });
+          console.log(`✅ ${lang} 上传到正式环境成功:`, currentURL);
+          console.log(`📦 ${lang} 备份文件:`, backupURL);
           
         } catch (error: any) {
           console.error(`❌ ${lang} 上传到正式环境失败:`, error);
@@ -573,7 +596,7 @@ if (typeof module !== 'undefined' && module.exports) {
       
       // 显示上传结果
       if (failedUploads.length === 0) {
-        toast.success(`🎉 所有翻译文件上传到正式环境成功！共 ${uploadResults.length} 个语言`);
+        toast.success(`🎉 所有翻译文件上传到正式环境成功！共 ${uploadResults.length} 个语言\n📦 备份时间戳: ${timestamp}`);
         console.log('所有上传结果（正式环境）:', uploadResults);
         
         // 复制第一个链接到剪贴板作为示例

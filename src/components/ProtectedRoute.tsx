@@ -25,7 +25,7 @@ const getCurrentPassword = (): string | null => {
   if (year === 2026) {
     // Q1: 1-3月 -> 010122
     if (month >= 1 && month <= 3) {
-      return "010122";
+      return "010722";
     }
     // Q2: 4-6月 -> 010322
     if (month >= 4 && month <= 6) {

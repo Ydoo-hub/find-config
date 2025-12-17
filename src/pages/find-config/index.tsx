@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { writeTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../const';
+import { storage, storageProd } from '../../const';
 import { toast, loading } from '../../utils/toastManager';
 import findLogo from '../../assets/2.jpg';
 import backIcon from '../../assets/back.png';
@@ -55,6 +55,10 @@ function FindConfig() {
   const [savePath, setSavePath] = useState<string>(() => {
     return localStorage.getItem('find-config-save-path') || '';
   });
+  
+  // 确认弹窗状态
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmInput, setConfirmInput] = useState("");
 
   // 当 iframe 加载完成时设置标志
   const handleIframeLoad = () => {
@@ -410,47 +414,65 @@ function FindConfig() {
   };
 
   const uploadToFirebaseProduction = async () => {
-    // 打开url https://console.firebase.google.com/u/0/project/recorder-pro-50451/storage/fbg-res/files
-    await openUrl('https://console.firebase.google.com/u/0/project/recorder-pro-50451/storage/fbg-res/files/~2Ffind-configs');
-    // if (!convertedData) return;
-    // try {
-    //   loading.show('正在上传到正式环境...');
+    if (!convertedData) return;
+    
+    // 显示确认弹窗
+    setShowConfirmModal(true);
+  };
+
+  // 确认后执行上传到正式环境
+  const confirmUploadToProduction = async () => {
+    if (!convertedData) return;
+    
+    try {
+      loading.show('正在上传到正式环境...');
       
-    //   // 生成文件名
-    //   const fileName = generateFileName();
+      // 转换为字符串
+      const jsonString = JSON.stringify(convertedData, null, 2);
       
-    //   // 转换为字符串
-    //   const jsonString = JSON.stringify(convertedData, null, 2);
+      // 生成时间戳文件名：年月日时分秒-module-data.json
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      const backupFileName = `${timestamp}-module-data.json`;
       
-    //   // 创建 Firebase Storage 引用（正式环境）
-    //   const storageRef = ref(storage, `find-configs-prod/${fileName}`);
+      // 1. 上传当前使用的文件：module-data.json
+      loading.show('正在上传当前配置文件...');
+      const currentStorageRef = ref(storageProd, `find-configs/module-data.json`);
+      await uploadString(currentStorageRef, jsonString, 'raw', {
+        contentType: 'application/json'
+      });
+      const currentURL = await getDownloadURL(currentStorageRef);
+      console.log('✅ 当前配置文件已上传:', currentURL);
       
-    //   // 直接上传字符串（无需创建文件）
-    //   await uploadString(storageRef, jsonString, 'raw', {
-    //     contentType: 'application/json'
-    //   });
+      // 2. 上传备份文件：年月日时分秒-module-data.json
+      loading.show('正在保存备份文件...');
+      const backupStorageRef = ref(storageProd, `find-configs/backups/${backupFileName}`);
+      await uploadString(backupStorageRef, jsonString, 'raw', {
+        contentType: 'application/json'
+      });
+      const backupURL = await getDownloadURL(backupStorageRef);
+      console.log('✅ 备份文件已保存:', backupURL);
       
-    //   // 获取下载链接
-    //   const downloadURL = await getDownloadURL(storageRef);
+      loading.hide();
+      toast.success(`✅ 配置已成功上传到正式环境！\n📦 备份文件: ${backupFileName}`);
+      console.log('✅ Firebase Production URL:', currentURL);
+      console.log('📦 Backup URL:', backupURL);
       
-    //   loading.hide();
-    //   toast.success('已成功上传到正式环境！');
-    //   console.log('✅ Firebase Production URL:', downloadURL);
+      // 复制当前文件链接到剪贴板
+      try {
+        await navigator.clipboard.writeText(currentURL);
+        toast.success('🔗 当前文件链接已复制到剪贴板');
+        console.log('✅ 链接已复制到剪贴板');
+      } catch (clipboardError) {
+        console.log('⚠️ 无法复制到剪贴板，但上传成功');
+      }
       
-    //   // 可选：复制链接到剪贴板
-    //   try {
-    //     await navigator.clipboard.writeText(downloadURL);
-    //     console.log('✅ 链接已复制到剪贴板');
-    //   } catch (clipboardError) {
-    //     console.log('⚠️ 无法复制到剪贴板，但上传成功');
-    //   }
-      
-    //   return downloadURL;
-    // } catch (error: any) {
-    //   console.error('❌ 上传失败:', error);
-    //   loading.hide();
-    //   toast.error(`上传失败: ${error.message || '未知错误'}`);
-    // }
+      return { currentURL, backupURL, backupFileName };
+    } catch (error: any) {
+      console.error('❌ 上传失败:', error);
+      loading.hide();
+      toast.error(`上传失败: ${error.message || '未知错误'}`);
+    }
   };
 
   const reset = () => {
@@ -497,6 +519,42 @@ function FindConfig() {
     }
   };
 
+  // 处理确认上传
+  const handleConfirmUpload = async () => {
+    const CONFIRM_TEXT = "已验证测试环境没问题，可以发布到线上";
+    
+    if (confirmInput !== CONFIRM_TEXT) {
+      toast.error('确认文案不正确，请重新输入');
+      return;
+    }
+
+    // 关闭弹窗
+    setShowConfirmModal(false);
+    setConfirmInput("");
+
+    // 执行上传
+    await confirmUploadToProduction();
+  };
+
+  // 取消确认
+  const handleCancelConfirm = () => {
+    setShowConfirmModal(false);
+    setConfirmInput("");
+  };
+
+  // 双击复制确认文案
+  const handleDoubleClickCopy = async () => {
+    const CONFIRM_TEXT = "已验证测试环境没问题，可以发布到线上";
+    
+    try {
+      await navigator.clipboard.writeText(CONFIRM_TEXT);
+      toast.success('✅ 确认文案已复制到剪贴板');
+    } catch (error) {
+      console.error('复制失败:', error);
+      toast.error('复制失败，请手动复制');
+    }
+  };
+
   return (
     <div className="find-config-container">
       <div className="find-config-left">
@@ -506,9 +564,9 @@ function FindConfig() {
             <button className="back-button" onClick={() => navigate("/")}>
               <img src={settingIcon} alt="返回" />
             </button>
-            <button className="setting-button" onClick={() => setShowSettingsModal(true)}>  
+            {/* <button className="setting-button" onClick={() => setShowSettingsModal(true)}>  
               <img src={backIcon} alt="设置" />
-            </button>
+            </button> */}
             <div className="logo-badge">
               <img src={findLogo} alt="找茬配置" />
             </div>
@@ -614,7 +672,7 @@ function FindConfig() {
                 </div>
               </div>
 
-              <div className="json-preview-container">
+              {/* <div className="json-preview-container">
                 <div className="preview-header">
                   <span>👁️</span>
                   <span>JSON 预览</span>
@@ -622,7 +680,7 @@ function FindConfig() {
                 <pre className="json-preview">
                   {JSON.stringify(convertedData, null, 2)}
                 </pre>
-              </div>
+              </div> */}
 
               <div className="button-group">
                 <button className="btn btn-download" onClick={downloadJSON}>
@@ -711,6 +769,68 @@ function FindConfig() {
                 onClick={saveSettings}
               >
                 保存设置
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 确认上传弹窗 */}
+      {showConfirmModal && (
+        <div className="modal-overlay" onClick={handleCancelConfirm}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🚀 上传到正式环境确认</h2>
+              <button 
+                className="modal-close" 
+                onClick={handleCancelConfirm}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="confirm-warning">
+                <span className="warning-icon">⚠️</span>
+                <p>你即将上传 <strong>找茬配置</strong> 到正式环境！</p>
+                <p>此操作将直接影响线上用户，请确保已在测试环境验证无误。</p>
+              </div>
+              <div className="setting-item">
+                <label className="setting-label">
+                  请输入以下文案以确认上传：（双击下面文字复制）
+                  <span 
+                    className="confirm-text-hint" 
+                    onDoubleClick={handleDoubleClickCopy}
+                    style={{ cursor: 'pointer', userSelect: 'text' }}
+                    title="双击复制"
+                  >
+                    已验证测试环境没问题，可以发布到线上
+                  </span>
+                </label>
+                <div className="setting-input-group">
+                  <input
+                    type="text"
+                    className="setting-input"
+                    value={confirmInput}
+                    onChange={(e) => setConfirmInput(e.target.value)}
+                    placeholder="请输入确认文案"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="modal-btn modal-btn-cancel"
+                onClick={handleCancelConfirm}
+              >
+                取消
+              </button>
+              <button 
+                className="modal-btn modal-btn-danger"
+                onClick={handleConfirmUpload}
+                disabled={!confirmInput}
+              >
+                确认上传到正式环境
               </button>
             </div>
           </div>

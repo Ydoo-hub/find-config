@@ -913,6 +913,81 @@
   transform: translateY(0);
 }
 
+/* ==================== 确认弹窗样式 ==================== */
+.find-config-container .confirm-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.find-config-container .warning-icon {
+  font-size: 48px;
+  display: block;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.find-config-container .confirm-warning p {
+  margin: 0;
+  color: #856404;
+  line-height: 1.6;
+  text-align: center;
+  font-size: 14px;
+}
+
+.find-config-container .confirm-warning strong {
+  color: #d63384;
+  font-weight: 700;
+}
+
+.find-config-container .confirm-text-hint {
+  display: block;
+  margin-top: 12px;
+  padding: 16px;
+  background: #2A2A2A;
+  border: 2px dashed #4A9EFF;
+  border-radius: 8px;
+  color: #4A9EFF;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.find-config-container .confirm-text-hint:hover {
+  background: #3A3A3A;
+  border-color: #6BB5FF;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.2);
+}
+
+.find-config-container .confirm-text-hint:active {
+  transform: scale(0.98);
+}
+
+.find-config-container .modal-btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.find-config-container .modal-btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.find-config-container .modal-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ==================== 响应式 ==================== */
 @media (max-width: 1200px) {
   .stats-grid {
